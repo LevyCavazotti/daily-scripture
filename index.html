@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Faith — Palavra do Dia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1110; --card:#171b18; --border:#2d342f; --text:#eee9dd;
+  --title:#f7f1e4; --muted:#aaa696; --gold:#b79a62; --gold-light:#d8c49b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top,#171b18 0,#0e1110 48%);color:var(--text);font-family:"Crimson Text",serif;line-height:1.75;min-height:100vh}
+header{padding:46px 20px 30px;text-align:center;border-bottom:1px solid var(--border)}
+.symbol{font-size:1.15rem;color:var(--gold);margin-bottom:10px;letter-spacing:.3em}
+header h1{font-family:"Playfair Display",serif;font-weight:500;color:var(--title);font-size:2.35rem;margin:0}
+header p{margin:8px 0 20px;color:var(--muted);font-style:italic}
+nav{display:flex;justify-content:center;gap:25px;flex-wrap:wrap}
+nav a{color:var(--gold-light);text-decoration:none;font-size:1.05rem}
+nav a:hover{color:#fff}
+main{max-width:780px;margin:55px auto;padding:0 20px}
+.card{background:rgba(23,27,24,.96);border:1px solid var(--border);border-top:3px solid var(--gold);padding:42px 44px;box-shadow:0 18px 45px rgba(0,0,0,.35);position:relative}
+.card:before{content:"✦";position:absolute;top:15px;right:20px;color:var(--gold);opacity:.55}
+.label{text-transform:uppercase;letter-spacing:.16em;color:var(--gold);font-size:.78rem}
+.date{color:var(--muted);font-size:.9rem;margin:6px 0 25px;font-style:italic}
+.quote{font-family:"Playfair Display",serif;font-size:1.65rem;line-height:1.6;color:var(--title);margin:0 0 22px}
+.reference{color:var(--gold-light);font-style:italic;font-size:1.05rem}
+.theme{display:inline-block;margin-top:16px;padding:4px 12px;border:1px solid #4b514b;border-radius:20px;color:var(--muted);font-size:.82rem}
+.actions{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}
+button,.button{font:inherit;color:var(--gold-light);background:transparent;border:1px solid var(--gold);border-radius:22px;padding:8px 20px;cursor:pointer;text-decoration:none}
+button:hover,.button:hover{background:var(--gold);color:#10120f}
+.intro{margin-top:32px;text-align:center;color:var(--muted);font-style:italic}
+footer{text-align:center;padding:30px 20px;color:#716f65;border-top:1px solid var(--border);margin-top:70px;font-size:.9rem}
+@media(max-width:560px){header h1{font-size:1.9rem}.card{padding:34px 24px}.quote{font-size:1.35rem}nav{gap:15px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="symbol">✝</div>
+  <h1>Daily Faith</h1>
+  <p>Uma palavra para o coração, todos os dias.</p>
+  <nav>
+    <a href="index.html">Hoje</a>
+    <a href="arquivo.html">Arquivo</a>
+  </nav>
+</header>
+
+<main>
+  <section class="card" id="card">
+    <div class="label">Palavra do dia</div>
+    <div class="date" id="date"></div>
+    <p class="quote" id="quote">Carregando...</p>
+    <div class="reference" id="reference"></div>
+    <div class="theme" id="theme"></div>
+    <div class="actions">
+      <button id="share">Compartilhar</button>
+    </div>
+  </section>
+  <p class="intro">“Aquietai-vos, e sabei que eu sou Deus.” — Salmos 46:10</p>
+</main>
+
+<footer>
+  © 2026 — Daily Faith<br>
+  <span>Um pequeno momento de fé no meio do dia.</span>
+</footer>
+
+<script>
+fetch("data/citacoes.json")
+.then(r=>r.json())
+.then(db=>{
+  const items=db.citacoes;
+  const start=new Date(2026,0,1);
+  const now=new Date();
+  const today=now<start?start:now;
+
+  // Embaralhamento determinístico: a ordem muda a cada ano,
+  // mas permanece igual durante todo o ano.
+  function seedRandom(seed){
+    let x=seed>>>0;
+    return function(){
+      x=(x+0x6D2B79F5)|0;
+      let t=Math.imul(x^(x>>>15),1|x);
+      t=t+Math.imul(t^(t>>>7),61|t)^t;
+      return ((t^(t>>>14))>>>0)/4294967296;
+    };
+  }
+
+  function shuffledForYear(year){
+    const arr=[...items];
+    const random=seedRandom(year);
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  const order=shuffledForYear(today.getFullYear());
+  const dayOfYear=Math.floor((today-new Date(today.getFullYear(),0,1))/86400000);
+  const item=order[dayOfYear % order.length];
+
+  document.getElementById("date").textContent=today.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"});
+  document.getElementById("quote").textContent="“"+item.texto+"”";
+  document.getElementById("reference").textContent="— "+item.referencia;
+  document.getElementById("theme").textContent=item.tema;
+
+  document.getElementById("share").onclick=async()=>{
+    const text=`“${item.texto}” — ${item.referencia}`;
+    const url=location.href;
+    if(navigator.share){
+      try{await navigator.share({title:"Daily Faith — Palavra do Dia",text,url});}catch(e){}
+    }else{
+      try{await navigator.clipboard.writeText(`${text}\n\n${url}`);alert("Palavra e link copiados.");}
+      catch(e){alert(`${text}\n\n${url}`);}
+    }
+  };
+})
+.catch(()=>{document.getElementById("quote").textContent="Não foi possível carregar a palavra de hoje.";});
+</script>
+</body>
+</html>
